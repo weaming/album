@@ -46,7 +46,13 @@ func (album MyAlbum) Serve(ctx *iris.Context) {
 		ctx.WriteString("ok")
 		//ctx.ServeFile(fp.Join(album.root, ctx.Param("path")))
 	default:
-		album.dir = NewDirstr(fp.Join(album.root, ctx.Param("path")))
+		obj := NewDirstr(fp.Join(album.root, ctx.Param("path")))
+		if obj == nil {
+			ctx.WriteString("Invalid URL")
+			return
+		} else {
+			album.dir = obj
+		}
 		ctx.WriteString(fmt.Sprintf(`
 			<!DOCTYPE html>
 			<html lang="en">

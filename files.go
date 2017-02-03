@@ -18,7 +18,8 @@ type DirStr struct {
 func NewDirstr(path string) *DirStr {
 	fi, err := os.Stat(path)
 	if err != nil {
-		panic(err)
+		fmt.Println(err)
+		return nil
 	}
 	if !fi.IsDir() {
 		return nil

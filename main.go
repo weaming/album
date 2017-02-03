@@ -10,10 +10,14 @@ import (
 import "github.com/kataras/iris"
 
 var ROOT string
+var LISTEN = ":8000"
 
 func main() {
 	flag.Parse()
 	ROOT = flag.Arg(0)
+	if flag.Arg(1) != "" {
+		LISTEN = flag.Arg(1)
+	}
 	fmt.Printf("To be listed direcotry: [%v]\n", ROOT)
 
 	iris.Config.IsDevelopment = true // reloads the templates on each request, defaults to false
@@ -25,7 +29,7 @@ func main() {
 	iris.StaticWeb("/img", ROOT)
 
 	iris.Handle("GET", "/public/*path", MyAlbum{root: ROOT})
-	iris.Listen(":8000")
+	iris.Listen(LISTEN)
 }
 
 type MyAlbum struct {

@@ -104,11 +104,24 @@ func Img2Html(path string, dir *DirStr) []string {
 func Dir2Html(path string, dir *DirStr) []string {
 	rv := []string{}
 	for index, file := range dir.Dirs {
-		if len(NewDirstr(dir.AbsDirs[index]).Images) > 0 {
+		if hasPhoto(dir.AbsDirs[index]) {
 			rv = append(rv, h_div(
 				h_span(h_a("/public/"+fp.Join(path[8:], file), file+"/"), "link")+h_span(dirSize(dir.AbsDirs[index]), "size"), "directory"))
-			//rv = append(rv, h_a("/public/"+file, file+"/"))
 		}
 	}
 	return rv
+}
+
+func hasPhoto(path string) bool {
+	dir := NewDirstr(path)
+	if len(dir.Images) > 0 {
+		return true
+	} else {
+		for _, subpath := range dir.AbsDirs {
+			if hasPhoto(subpath) {
+				return true
+			}
+		}
+	}
+	return false
 }

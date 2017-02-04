@@ -85,7 +85,7 @@ func (album MyAlbum) Serve(ctx *iris.Context) {
 			</body>
 			</html>`,
 			len(album.dir.Dirs),
-			strings.Join(Dir2Html(album.dir), ""),
+			strings.Join(Dir2Html(path, album.dir), ""),
 			len(album.dir.Images),
 			allFilesSize(album.dir.AbsImages),
 			strings.Join(Img2Html(path, album.dir), "")))
@@ -101,12 +101,12 @@ func Img2Html(path string, dir *DirStr) []string {
 	return rv
 }
 
-func Dir2Html(dir *DirStr) []string {
+func Dir2Html(path string, dir *DirStr) []string {
 	rv := []string{}
 	for index, file := range dir.Dirs {
 		if len(NewDirstr(dir.AbsDirs[index]).Images) > 0 {
 			rv = append(rv, h_div(
-				h_span(h_a("/public/"+file, file+"/"), "link")+h_span(dirSize(dir.AbsDirs[index]), "size"), "directory"))
+				h_span(h_a("/public/"+fp.Join(path[8:], file), file+"/"), "link")+h_span(dirSize(dir.AbsDirs[index]), "size"), "directory"))
 			//rv = append(rv, h_a("/public/"+file, file+"/"))
 		}
 	}

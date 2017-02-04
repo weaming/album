@@ -68,7 +68,9 @@ func (album MyAlbum) Serve(ctx *iris.Context) {
 					padding: 1rem;
 					max-width: 900px;
 					}
-					.img:hover{background-color: #eee;}
+					.img:hover,
+					.directory:hover
+					{background-color: #eee;}
 				</style>
 			</head>
 			<body>

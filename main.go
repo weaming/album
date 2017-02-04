@@ -73,16 +73,18 @@ func (album MyAlbum) Serve(ctx *iris.Context) {
 			</head>
 			<body>
 				<div class="region">
-					<h3>Directories:</h3>
+					<h3>Directories: %v</h3>
 					%v
 				</div>
 				<div class="region">
-					<h3>Photos:</h3>
+					<h3>Photos: %v</h3>
 					%v
 				</div>
 			</body>
 			</html>`,
+			len(album.dir.Dirs),
 			strings.Join(Dir2Html(album.dir.Root, album.dir.Dirs), "<br>"),
+			len(album.dir.Images),
 			strings.Join(Img2Html(path, album.dir.Root, album.dir.Images), "")))
 	}
 }

@@ -77,32 +77,35 @@ func (album MyAlbum) Serve(ctx *iris.Context) {
 					%v
 				</div>
 				<div class="region">
-					<h3>Photos: %v</h3>
+					<h3>Photos: %v Size: %v</h3>
 					%v
 				</div>
 			</body>
 			</html>`,
 			len(album.dir.Dirs),
-			strings.Join(Dir2Html(album.dir.Root, album.dir.Dirs), "<br>"),
+			strings.Join(Dir2Html(album.dir), ""),
 			len(album.dir.Images),
-			strings.Join(Img2Html(path, album.dir.Root, album.dir.Images), "")))
+			allFilesSize(album.dir.AbsImages),
+			strings.Join(Img2Html(path, album.dir), "")))
 	}
 }
 
-func Img2Html(path, root string, names []string) []string {
+func Img2Html(path string, dir *DirStr) []string {
 	rv := []string{}
-	for _, file := range names {
+	for index, file := range dir.Images {
 		rv = append(rv, h_div(
-			h_span(h_a("/img/"+fp.Join(path[8:], file), file), "link")+h_span(fileSize(fp.Join(root, file)), "size"), "img"))
+			h_span(h_a("/img/"+fp.Join(path[8:], file), file), "link")+h_span(fileSize(dir.AbsImages[index]), "size"), "img"))
 	}
 	return rv
 }
 
-func Dir2Html(root string, names []string) []string {
+func Dir2Html(dir *DirStr) []string {
 	rv := []string{}
-	for _, file := range names {
-		if len(NewDirstr(fp.Join(root, file)).Images) > 0 {
-			rv = append(rv, h_a("/public/"+file, file+"/"))
+	for index, file := range dir.Dirs {
+		if len(NewDirstr(dir.AbsDirs[index]).Images) > 0 {
+			rv = append(rv, h_div(
+				h_span(h_a("/public/"+file, file+"/"), "link")+h_span(dirSize(dir.AbsDirs[index]), "size"), "directory"))
+			//rv = append(rv, h_a("/public/"+file, file+"/"))
 		}
 	}
 	return rv

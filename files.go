@@ -13,9 +13,11 @@ type Dir struct {
 	Dirs      []string
 	Files     []string
 	Images    []string
+	Videos    []string
 	AbsDirs   []string
 	AbsFiles  []string
 	AbsImages []string
+	AbsVideos []string
 }
 
 func NewDir(path string) *Dir {
@@ -42,6 +44,9 @@ func NewDir(path string) *Dir {
 				case ".jpg", ".png", ".gif":
 					dir.Images = append(dir.Images, relPath)
 					dir.AbsImages = append(dir.AbsImages, absPath)
+				case ".mp4", ".avi", ".rmvb", ".mkv", ".wmv", ".mov", ".dat", ".mpg", ".mpeg":
+					dir.Videos = append(dir.Videos, relPath)
+					dir.AbsVideos = append(dir.AbsVideos, absPath)
 				default:
 				}
 			}
@@ -91,6 +96,14 @@ func some_sub_dir_images_size_int64(dirs []string) (total int64) {
 	return
 }
 
+func some_sub_dir_videos_size_int64(dirs []string) (total int64) {
+	for _, path := range dirs {
+		tmp := NewDir(path)
+		total = total + some_files_size_int64(tmp.AbsVideos) + some_sub_dir_videos_size_int64(tmp.AbsDirs)
+	}
+	return
+}
+
 func file_size_str(path string) string {
 	return size2text(get_size(path))
 }
@@ -106,4 +119,9 @@ func some_files_size_str(files []string) string {
 func dir_images_size_str(dir string) string {
 	tmp := NewDir(dir)
 	return size2text(some_files_size_int64(tmp.AbsImages) + some_sub_dir_images_size_int64(tmp.AbsDirs))
+}
+
+func dir_videos_size_str(dir string) string {
+	tmp := NewDir(dir)
+	return size2text(some_files_size_int64(tmp.AbsVideos) + some_sub_dir_videos_size_int64(tmp.AbsDirs))
 }

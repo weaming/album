@@ -106,16 +106,16 @@ func (album MyAlbum) Serve(ctx *iris.Context) {
 		</html>`,
 		len(album.dir.Dirs),
 		strings.Join(Dir2Html(path, album.dir), ""),
-		len(album.dir.Images),
-		some_files_size_str(album.dir.AbsImages),
+		len(album.dir.Videos),
+		some_files_size_str(album.dir.AbsVideos),
 		strings.Join(Img2Html(path, album.dir), "")))
 }
 
 func Img2Html(path string, dir *Dir) []string {
 	rv := []string{}
-	for index, file := range dir.Images {
+	for index, file := range dir.Videos {
 		rv = append(rv, h_div(
-			h_span(h_a("/img/"+fp.Join(path[7:], file), file), "link")+h_span(file_size_str(dir.AbsImages[index]), "size"), "img"))
+			h_span(h_a("/img/"+fp.Join(path[7:], file), file), "link")+h_span(file_size_str(dir.AbsVideos[index]), "size"), "img"))
 	}
 	return rv
 }
@@ -123,9 +123,9 @@ func Img2Html(path string, dir *Dir) []string {
 func Dir2Html(path string, dir *Dir) []string {
 	rv := []string{}
 	for index, file := range dir.Dirs {
-		if hasPhoto(dir.AbsDirs[index]) {
+		if hasVideo(dir.AbsDirs[index]) {
 			rv = append(rv, h_div(
-				h_span(h_a("/index/"+fp.Join(path[7:], file), file+"/"), "link")+h_span(dir_images_size_str(dir.AbsDirs[index]), "size"), "directory"))
+				h_span(h_a("/index/"+fp.Join(path[7:], file), file+"/"), "link")+h_span(dir_videos_size_str(dir.AbsDirs[index]), "size"), "directory"))
 		}
 	}
 	return rv
@@ -138,6 +138,20 @@ func hasPhoto(path string) bool {
 	} else {
 		for _, subpath := range dir.AbsDirs {
 			if hasPhoto(subpath) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func hasVideo(path string) bool {
+	dir := NewDir(path)
+	if len(dir.Videos) > 0 {
+		return true
+	} else {
+		for _, subpath := range dir.AbsDirs {
+			if hasVideo(subpath) {
 				return true
 			}
 		}

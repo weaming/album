@@ -39,7 +39,7 @@ func NewDir(path string) *Dir {
 				dir.Files = append(dir.Files, relPath)
 				dir.AbsFiles = append(dir.AbsFiles, absPath)
 				switch strings.ToLower(fp.Ext(relPath)) {
-				case ".jpg", ".png", ".gif":
+				case ".jpg", ".jpeg", ".png", ".gif", ".bmp":
 					dir.Images = append(dir.Images, relPath)
 					dir.AbsImages = append(dir.AbsImages, absPath)
 				default:

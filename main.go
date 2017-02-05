@@ -105,10 +105,10 @@ func (album MyAlbum) Serve(ctx *iris.Context) {
 		</body>
 		</html>`,
 		len(album.dir.Dirs),
-		strings.Join(Dir2Html(path, album.dir), ""),
+		strings.Join(Dir2Html(path, album.dir), "\n"),
 		len(album.dir.Images),
 		some_files_size_str(album.dir.AbsImages),
-		strings.Join(Img2Html(path, album.dir), "")))
+		strings.Join(Img2Html(path, album.dir), "\n")))
 }
 
 func Img2Html(path string, dir *Dir) []string {

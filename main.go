@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"os"
 	fp "path/filepath"
 	"strings"
 )
@@ -14,7 +15,17 @@ var LISTEN = ":8000"
 
 func main() {
 	flag.Parse()
-	ROOT = flag.Arg(0)
+	ROOT, _ := fp.Abs(flag.Arg(0))
+	fi, err := os.Stat(ROOT)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(11)
+	}
+	if !fi.IsDir() {
+		fmt.Fprintln(os.Stderr, "The path should be a directory!!")
+		os.Exit(12)
+	}
+
 	if flag.Arg(1) != "" {
 		LISTEN = flag.Arg(1)
 	}
@@ -24,11 +35,11 @@ func main() {
 	iris.Config.Gzip = true          // compressed gzip contents to the client, the same for Serializers also, defaults to false
 
 	iris.Get("/", func(ctx *iris.Context) {
-		ctx.Writef(h_a("/public", "View your photos!"))
+		ctx.Redirect("/index")
 	})
 	iris.StaticWeb("/img", ROOT)
 
-	iris.Handle("GET", "/public/*path", MyAlbum{root: ROOT})
+	iris.Handle("GET", "/index/*path", MyAlbum{root: ROOT})
 	iris.Listen(LISTEN)
 }
 
@@ -75,7 +86,7 @@ func (album MyAlbum) Serve(ctx *iris.Context) {
 			</head>
 			<body>
 				<div class="region">
-					<h3>Directories: %v</h3>
+					<h3> Directories: %v <a href="/index" style="float: right;">Home</a> </h3>
 					%v
 				</div>
 				<div class="region">
@@ -96,7 +107,7 @@ func Img2Html(path string, dir *Dir) []string {
 	rv := []string{}
 	for index, file := range dir.Images {
 		rv = append(rv, h_div(
-			h_span(h_a("/img/"+fp.Join(path[8:], file), file), "link")+h_span(file_size_str(dir.AbsImages[index]), "size"), "img"))
+			h_span(h_a("/img/"+fp.Join(path[7:], file), file), "link")+h_span(file_size_str(dir.AbsImages[index]), "size"), "img"))
 	}
 	return rv
 }
@@ -106,7 +117,7 @@ func Dir2Html(path string, dir *Dir) []string {
 	for index, file := range dir.Dirs {
 		if hasPhoto(dir.AbsDirs[index]) {
 			rv = append(rv, h_div(
-				h_span(h_a("/public/"+fp.Join(path[8:], file), file+"/"), "link")+h_span(dir_images_size_str(dir.AbsDirs[index]), "size"), "directory"))
+				h_span(h_a("/index/"+fp.Join(path[7:], file), file+"/"), "link")+h_span(dir_images_size_str(dir.AbsDirs[index]), "size"), "directory"))
 		}
 	}
 	return rv

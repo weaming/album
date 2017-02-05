@@ -9,38 +9,46 @@ import (
 )
 
 import "github.com/kataras/iris"
+import "github.com/iris-contrib/middleware/basicauth"
 
-var ROOT string
-var LISTEN = ":8000"
+const DEFAULT_PW = "admin"
 
 func main() {
+	var LISTEN = flag.String("l", ":8000", `listen [host]:port, default bind to 0.0.0.0`)
+	var ADMIN = flag.String("u", "admin", `Basic authentication username`)
+	var PASSWORD = flag.String("p", DEFAULT_PW, `Basic authentication password`)
 	flag.Parse()
+
+	// check the directory path
 	ROOT, _ := fp.Abs(flag.Arg(0))
 	fi, err := os.Stat(ROOT)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
-		os.Exit(11)
+		os.Exit(1)
 	}
 	if !fi.IsDir() {
 		fmt.Fprintln(os.Stderr, "The path should be a directory!!")
-		os.Exit(12)
+		os.Exit(1)
 	}
 
-	if flag.Arg(1) != "" {
-		LISTEN = flag.Arg(1)
+	if *PASSWORD == DEFAULT_PW {
+		fmt.Println("Warning: set yourself password")
 	}
+	fmt.Printf("Your basic authentication username: [%v]\n", *ADMIN)
+	fmt.Printf("Your basic authentication password: [%v]\n", *PASSWORD)
 	fmt.Printf("To be listed direcotry: [%v]\n", ROOT)
 
 	iris.Config.IsDevelopment = true // reloads the templates on each request, defaults to false
 	iris.Config.Gzip = true          // compressed gzip contents to the client, the same for Serializers also, defaults to false
 
-	iris.Get("/", func(ctx *iris.Context) {
+	auth := basicauth.Default(map[string]string{*ADMIN: *PASSWORD})
+	iris.Get("/", auth, func(ctx *iris.Context) {
 		ctx.Redirect("/index")
 	})
 	iris.StaticWeb("/img", ROOT)
 
 	iris.Handle("GET", "/index/*path", MyAlbum{root: ROOT})
-	iris.Listen(LISTEN)
+	iris.Listen(*LISTEN)
 }
 
 type MyAlbum struct {

@@ -34,7 +34,7 @@ func main() {
 
 type MyAlbum struct {
 	root string
-	dir  *DirStr
+	dir  *Dir
 }
 
 func (album MyAlbum) Serve(ctx *iris.Context) {
@@ -46,7 +46,7 @@ func (album MyAlbum) Serve(ctx *iris.Context) {
 		ctx.WriteString("ok")
 		//ctx.ServeFile(fp.Join(album.root, ctx.Param("path")))
 	default:
-		obj := NewDirstr(fp.Join(album.root, ctx.Param("path")))
+		obj := NewDir(fp.Join(album.root, ctx.Param("path")))
 		if obj == nil {
 			ctx.WriteString("Invalid URL")
 			return
@@ -87,33 +87,33 @@ func (album MyAlbum) Serve(ctx *iris.Context) {
 			len(album.dir.Dirs),
 			strings.Join(Dir2Html(path, album.dir), ""),
 			len(album.dir.Images),
-			allFilesSize(album.dir.AbsImages),
+			some_files_size_str(album.dir.AbsImages),
 			strings.Join(Img2Html(path, album.dir), "")))
 	}
 }
 
-func Img2Html(path string, dir *DirStr) []string {
+func Img2Html(path string, dir *Dir) []string {
 	rv := []string{}
 	for index, file := range dir.Images {
 		rv = append(rv, h_div(
-			h_span(h_a("/img/"+fp.Join(path[8:], file), file), "link")+h_span(fileSize(dir.AbsImages[index]), "size"), "img"))
+			h_span(h_a("/img/"+fp.Join(path[8:], file), file), "link")+h_span(file_size_str(dir.AbsImages[index]), "size"), "img"))
 	}
 	return rv
 }
 
-func Dir2Html(path string, dir *DirStr) []string {
+func Dir2Html(path string, dir *Dir) []string {
 	rv := []string{}
 	for index, file := range dir.Dirs {
 		if hasPhoto(dir.AbsDirs[index]) {
 			rv = append(rv, h_div(
-				h_span(h_a("/public/"+fp.Join(path[8:], file), file+"/"), "link")+h_span(dirSize(dir.AbsDirs[index]), "size"), "directory"))
+				h_span(h_a("/public/"+fp.Join(path[8:], file), file+"/"), "link")+h_span(dir_images_size_str(dir.AbsDirs[index]), "size"), "directory"))
 		}
 	}
 	return rv
 }
 
 func hasPhoto(path string) bool {
-	dir := NewDirstr(path)
+	dir := NewDir(path)
 	if len(dir.Images) > 0 {
 		return true
 	} else {

@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-type DirStr struct {
+type Dir struct {
 	Root      string
 	Dirs      []string
 	Files     []string
@@ -18,7 +18,7 @@ type DirStr struct {
 	AbsImages []string
 }
 
-func NewDirstr(path string) *DirStr {
+func NewDir(path string) *Dir {
 	fi, err := os.Stat(path)
 	if err != nil {
 		fmt.Println(err)
@@ -27,7 +27,7 @@ func NewDirstr(path string) *DirStr {
 	if !fi.IsDir() {
 		return nil
 	} else {
-		dir := DirStr{Root: path}
+		dir := Dir{Root: path}
 		files, _ := ioutil.ReadDir(path)
 		for _, fi := range files {
 			absPath := fp.Join(path, fi.Name())
@@ -68,7 +68,7 @@ func size2text(size int64) string {
 	}
 }
 
-func getSize(path string) int64 {
+func get_size(path string) int64 {
 	fileInfo, err := os.Stat(path)
 	if err != nil {
 		panic(err)
@@ -76,18 +76,34 @@ func getSize(path string) int64 {
 	return fileInfo.Size()
 }
 
-func fileSize(path string) string {
-	return size2text(getSize(path))
+func some_files_size_int64(files []string) (total int64) {
+	for _, path := range files {
+		total += get_size(path)
+	}
+	return
 }
 
-func allFilesSize(files []string) string {
+func some_sub_dir_images_size_int64(dirs []string) (total int64) {
+	for _, path := range dirs {
+		tmp := NewDir(path)
+		total = total + some_files_size_int64(tmp.AbsImages) + some_sub_dir_images_size_int64(tmp.AbsDirs)
+	}
+	return
+}
+
+func file_size_str(path string) string {
+	return size2text(get_size(path))
+}
+
+func some_files_size_str(files []string) string {
 	var total int64
-	for _, path := range files {
-		total += getSize(path)
+	for _, file := range files {
+		total += get_size(file)
 	}
 	return size2text(total)
 }
 
-func dirSize(dir string) string {
-	return allFilesSize(NewDirstr(dir).AbsImages)
+func dir_images_size_str(dir string) string {
+	tmp := NewDir(dir)
+	return size2text(some_files_size_int64(tmp.AbsImages) + some_sub_dir_images_size_int64(tmp.AbsDirs))
 }

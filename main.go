@@ -100,7 +100,6 @@ func (album MyAlbum) Serve(ctx *iris.Context) {
 					padding: 1rem;
 					max-width: 900px;
 				}
-				.photo:hover,
 				.directory:hover
 				{
 					background-color: #eee;
@@ -117,18 +116,15 @@ func (album MyAlbum) Serve(ctx *iris.Context) {
 					max-width: 200px;
 					max-height: 200px;
 					margin: 5px;
-					border: 1px solid #ccc;
-				}
-				a.photo:hover{
-					border: 1px solid chocolate;
 				}
 				a.photo img.thumbnail{
-					display: inline-block;
 					width: 100%%;
 					height: 100%%;
+					border: 1px solid #ccc;
 				}
 				a.photo img.thumbnail:hover{
 					opacity: 0.7;
+					border: 1px solid chocolate;
 				}
 			</style>
 		</head>

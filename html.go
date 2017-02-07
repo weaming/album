@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"net/url"
-	"strings"
 )
 
 func h_a(url, text string) string {
@@ -31,7 +30,6 @@ func h_p(text, class string) string {
 }
 
 func UrlEncoded(str string) string {
-	str = strings.Replace(str, `\`, "/", -1)
 	u, err := url.Parse(str)
 	if err != nil {
 		return ""

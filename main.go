@@ -3,7 +3,9 @@ package main
 import (
 	"flag"
 	"fmt"
+	"net/url"
 	"os"
+	"path"
 	fp "path/filepath"
 	"strings"
 	"time"
@@ -146,12 +148,15 @@ func (album MyAlbum) Serve(ctx *iris.Context) {
 		strings.Join(Img2Html(path, album.dir), "\n")))
 }
 
-func Img2Html(path string, dir *Dir) []string {
+func Img2Html(uri string, dir *Dir) []string {
 	rv := []string{}
 	for index, file := range dir.Images {
+		u, _ := url.Parse(uri[7:])
+		u.Path = path.Join("/thumb/", u.Path, file)
+
 		rv = append(rv, fmt.Sprintf(`<a class="photo" href="%v"><img src="%v" class="thumbnail" title="%v"></a>`,
-			"/img/"+fp.Join(path[7:], file),
-			UrlEncoded("/thumb/"+fp.Join(path[7:], file)),
+			"/img/"+fp.Join(uri[7:], file),
+			UrlEncoded(u.String()),
 			fmt.Sprintf("%v [%v]", file, file_size_str(dir.AbsImages[index]))))
 	}
 	return rv

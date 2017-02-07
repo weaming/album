@@ -30,17 +30,11 @@ func h_p(text, class string) string {
 	return h_ele("p", class, text)
 }
 
-func url_path_encode(str string) string {
+func UrlEncoded(str string) string {
+	str = strings.Replace(str, `\`, "/", -1)
 	u, err := url.Parse(str)
 	if err != nil {
 		return ""
 	}
 	return u.String()
-}
-func UrlEncoded(str string) string {
-	names := []string{}
-	for _, name := range strings.Split(str, "/") {
-		names = append(names, url_path_encode(name))
-	}
-	return strings.Join(names, "/")
 }

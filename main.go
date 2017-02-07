@@ -40,7 +40,7 @@ func main() {
 		outdir = fp.Join(fp.Dir(ROOT), "thumbnail")
 	}
 	fmt.Printf("To be listed direcotry: [%v]\n", ROOT)
-	thumb_directory(ROOT, outdir)
+	go thumb_directory(ROOT, outdir)
 
 	fmt.Printf("Your basic authentication username: [%v]\n", *ADMIN)
 	fmt.Printf("Your basic authentication password: [%v]\n", *PASSWORD)

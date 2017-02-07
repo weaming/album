@@ -15,9 +15,11 @@ import "github.com/iris-contrib/middleware/basicauth"
 const DEFAULT_PW = "admin"
 
 func main() {
-	var LISTEN = flag.String("l", ":8000", `listen [host]:port, default bind to 0.0.0.0`)
-	var ADMIN = flag.String("u", "admin", `Basic authentication username`)
-	var PASSWORD = flag.String("p", DEFAULT_PW, `Basic authentication password`)
+	var LISTEN = flag.String("l", ":8000", "Listen [host]:port, default bind to 0.0.0.0")
+	var ADMIN = flag.String("u", "admin", "Basic authentication username")
+	var PASSWORD = flag.String("p", DEFAULT_PW, "Basic authentication password")
+	var OUTDIR = flag.String("o", "", "The directory of thumnail. Default [$ROOT/../thumbnail]")
+	var outdir = ""
 	flag.Parse()
 
 	// check the directory path
@@ -31,7 +33,14 @@ func main() {
 		fmt.Fprintln(os.Stderr, "The path should be a directory!!")
 		os.Exit(1)
 	}
+
+	if *OUTDIR != "" {
+		outdir = *OUTDIR
+	} else {
+		outdir = fp.Join(fp.Dir(ROOT), "thumbnail")
+	}
 	fmt.Printf("To be listed direcotry: [%v]\n", ROOT)
+	thumb_directory(ROOT, outdir)
 
 	fmt.Printf("Your basic authentication username: [%v]\n", *ADMIN)
 	fmt.Printf("Your basic authentication password: [%v]\n", *PASSWORD)
@@ -51,6 +60,7 @@ func main() {
 		ctx.Redirect("/index")
 	})
 	iris.StaticWeb("/img", ROOT)
+	iris.StaticWeb("/thumb", outdir)
 
 	needAuth := iris.Party("/index", auth)
 	{
@@ -80,27 +90,54 @@ func (album MyAlbum) Serve(ctx *iris.Context) {
 			<meta charset="UTF-8">
 			<title>My Photos</title>
 			<style>
-				.size{float: right;}
+				.right{float: right;}
 				.region{
-				background-color: #fff;
-				box-shadow: 0 2px 5px 0 rgba(0, 0, 0, .16), 0 2px 10px 0 rgba(0, 0, 0, .12);
-				margin: 0 auto 1rem auto;
-				padding: 1rem;
-				max-width: 900px;
+					background-color: #fff;
+					box-shadow: 0 2px 5px 0 rgba(0, 0, 0, .16), 0 2px 10px 0 rgba(0, 0, 0, .12);
+					margin: 0 auto 1rem auto;
+					padding: 1rem;
+					max-width: 900px;
 				}
-				.img:hover,
+				.photo:hover,
 				.directory:hover
-				{background-color: #eee;}
+				{
+					background-color: #eee;
+				}
+
+				div.photos div.container{
+					display: flex;
+					justify-content: space-around;
+					flex-wrap: wrap;
+					box-sizing: border-box;
+				}
+
+				a.photo{
+					max-width: 200px;
+					max-height: 200px;
+					margin: 5px;
+					border: 1px solid #ccc;
+				}
+				a.photo:hover{
+					border: 1px solid chocolate;
+				}
+				a.photo img.thumbnail{
+					display: inline-block;
+					width: 100%%;
+					height: 100%%;
+				}
+				a.photo img.thumbnail:hover{
+					opacity: 0.7;
+				}
 			</style>
 		</head>
 		<body>
-			<div class="region">
-				<h3> Directories: %v <a href="/index" style="float: right;">Home</a> </h3>
+			<div class="region directories">
+				<h3> Directories: %v <a href="/index" class="right">Home</a> </h3>
 				%v
 			</div>
-			<div class="region">
+			<div class="region photos">
 				<h3>Photos: %v Size: %v</h3>
-				%v
+				<div class="container"> %v </div>
 			</div>
 		</body>
 		</html>`,
@@ -114,8 +151,10 @@ func (album MyAlbum) Serve(ctx *iris.Context) {
 func Img2Html(path string, dir *Dir) []string {
 	rv := []string{}
 	for index, file := range dir.Images {
-		rv = append(rv, h_div(
-			h_span(h_a("/img/"+fp.Join(path[7:], file), file), "link")+h_span(file_size_str(dir.AbsImages[index]), "size"), "img"))
+		rv = append(rv, fmt.Sprintf(`<a class="photo" href="%v"><img src="%v" class="thumbnail" title="%v"></a>`,
+			"/img/"+fp.Join(path[7:], file),
+			UrlEncoded("/thumb/"+fp.Join(path[7:], file)),
+			fmt.Sprintf("%v [%v]", file, file_size_str(dir.AbsImages[index]))))
 	}
 	return rv
 }
@@ -125,7 +164,7 @@ func Dir2Html(path string, dir *Dir) []string {
 	for index, file := range dir.Dirs {
 		if hasPhoto(dir.AbsDirs[index]) {
 			rv = append(rv, h_div(
-				h_span(h_a("/index/"+fp.Join(path[7:], file), file+"/"), "link")+h_span(dir_images_size_str(dir.AbsDirs[index]), "size"), "directory"))
+				h_span(h_a("/index/"+fp.Join(path[7:], file), file+"/"), "link")+h_span(dir_images_size_str(dir.AbsDirs[index]), "right"), "directory"))
 		}
 	}
 	return rv

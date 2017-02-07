@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"net/url"
 )
 
 func h_a(url, text string) string {
@@ -26,4 +27,12 @@ func h_div(text, class string) string {
 
 func h_p(text, class string) string {
 	return h_ele("p", class, text)
+}
+
+func UrlEncoded(str string) string {
+	u, err := url.Parse(str)
+	if err != nil {
+		return ""
+	}
+	return u.String()
 }

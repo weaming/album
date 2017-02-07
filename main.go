@@ -169,17 +169,3 @@ func Dir2Html(path string, dir *Dir) []string {
 	}
 	return rv
 }
-
-func hasPhoto(path string) bool {
-	dir := NewDir(path)
-	if len(dir.Images) > 0 {
-		return true
-	} else {
-		for _, subpath := range dir.AbsDirs {
-			if hasPhoto(subpath) {
-				return true
-			}
-		}
-	}
-	return false
-}

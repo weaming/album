@@ -107,3 +107,17 @@ func dir_images_size_str(dir string) string {
 	tmp := NewDir(dir)
 	return size2text(some_files_size_int64(tmp.AbsImages) + some_sub_dir_images_size_int64(tmp.AbsDirs))
 }
+
+func hasPhoto(path string) bool {
+	dir := NewDir(path)
+	if len(dir.Images) > 0 {
+		return true
+	} else {
+		for _, subpath := range dir.AbsDirs {
+			if hasPhoto(subpath) {
+				return true
+			}
+		}
+	}
+	return false
+}

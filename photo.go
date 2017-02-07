@@ -6,7 +6,6 @@ import (
 	"image/gif"
 	"image/jpeg"
 	"image/png"
-	"net/url"
 	"os"
 	fp "path/filepath"
 )
@@ -14,7 +13,7 @@ import (
 	"github.com/nfnt/resize"
 )
 
-func thumbnail(path, outpath string) error {
+func thumbnail(path, outpath, ext string) error {
 	// open "test.jpg"
 	file, err := os.Open(path)
 	if err != nil {
@@ -22,7 +21,6 @@ func thumbnail(path, outpath string) error {
 	}
 
 	// decode jpeg into image.Image
-	ext := fp.Ext(path)
 	var img image.Image
 	switch ext {
 	case ".jpg":
@@ -52,7 +50,7 @@ func thumbnail(path, outpath string) error {
 
 	// write new image to file
 	switch ext {
-	case ".jpg":
+	case ".jpg", ".jpeg":
 		jpeg.Encode(out, m, nil)
 	case ".png":
 		png.Encode(out, m)
@@ -66,10 +64,18 @@ func thumbnail(path, outpath string) error {
 
 func thumb_directory(tododir, outdir string) error {
 	TODODIR := NewDir(tododir)
-	err := os.MkdirAll(outdir, 0755)
+	_, err := os.Stat(outdir)
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(3)
+		if os.IsNotExist(err) {
+			err := os.MkdirAll(outdir, 0755)
+			if err != nil {
+				fmt.Println(err)
+				os.Exit(3)
+			}
+		} else {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(4)
+		}
 	}
 
 	for _, file := range TODODIR.AbsImages {
@@ -85,18 +91,16 @@ func thumb_directory(tododir, outdir string) error {
 		}
 
 		fmt.Printf("Thumbnailing: %v\n", rel_path)
-		thumbnail(file, out_path)
+		err = thumbnail(file, out_path, fp.Ext(file))
+		if err != nil {
+			err := thumbnail(file, out_path, fp.Ext(".jpg"))
+			if err != nil {
+				return err
+			}
+		}
 	}
 	for index, dir := range TODODIR.AbsDirs {
 		thumb_directory(dir, fp.Join(outdir, TODODIR.Dirs[index]))
 	}
 	return nil
-}
-
-func UrlEncoded(str string) string {
-	u, err := url.Parse(str)
-	if err != nil {
-		return ""
-	}
-	return u.String()
 }

@@ -20,6 +20,8 @@ func main() {
 	var PASSWORD = flag.String("p", DEFAULT_PW, "Basic authentication password")
 	var OUTDIR = flag.String("o", "", "The directory of thumnail. Default [$ROOT/../thumbnail]")
 	var outdir = ""
+	var MAX_WIDTH = flag.Uint("w", 200, "The maximum width of output photo.")
+	var MAX_HEIGHT = flag.Uint("h", 200, "The maximum height of output photo.")
 	flag.Parse()
 
 	// check the directory path
@@ -40,7 +42,7 @@ func main() {
 		outdir = fp.Join(fp.Dir(ROOT), "thumbnail")
 	}
 	fmt.Printf("To be listed direcotry: [%v]\n", ROOT)
-	go thumb_directory(ROOT, outdir)
+	go thumb_directory(ROOT, outdir, *MAX_WIDTH, *MAX_HEIGHT)
 
 	fmt.Printf("Your basic authentication username: [%v]\n", *ADMIN)
 	fmt.Printf("Your basic authentication password: [%v]\n", *PASSWORD)

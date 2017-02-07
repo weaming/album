@@ -13,7 +13,7 @@ import (
 	"github.com/nfnt/resize"
 )
 
-func thumbnail(path, outpath, ext string) error {
+func thumbnail(path, outpath, ext string, width, height uint) error {
 	// open "test.jpg"
 	file, err := os.Open(path)
 	if err != nil {
@@ -39,8 +39,7 @@ func thumbnail(path, outpath, ext string) error {
 
 	// resize to width 1000 using Lanczos resampling
 	// and preserve aspect ratio
-	var max_size uint = 500
-	m := resize.Thumbnail(max_size, max_size, img, resize.Bilinear)
+	m := resize.Thumbnail(width, height, img, resize.Bilinear)
 
 	out, err := os.Create(outpath)
 	if err != nil {
@@ -62,7 +61,8 @@ func thumbnail(path, outpath, ext string) error {
 	return nil
 }
 
-func thumb_directory(tododir, outdir string) error {
+func thumb_directory(tododir, outdir string, width, height uint) (int, error) {
+	count := 0
 	TODODIR := NewDir(tododir)
 	_, err := os.Stat(outdir)
 	if err != nil {
@@ -81,26 +81,30 @@ func thumb_directory(tododir, outdir string) error {
 	for _, file := range TODODIR.AbsImages {
 		rel_path, err := fp.Rel(tododir, file)
 		if err != nil {
-			return err
+			return count, err
 		}
 
 		out_path := fp.Join(outdir, rel_path)
 		if _, err := os.Stat(out_path); err == nil {
-			fmt.Printf("Ignore existed thumbnail: %v\n", out_path)
+			fmt.Printf("Ignore existed: %v\n", out_path)
 			continue
 		}
 
 		fmt.Printf("Thumbnailing: %v\n", rel_path)
-		err = thumbnail(file, out_path, fp.Ext(file))
+		err = thumbnail(file, out_path, fp.Ext(file), width, height)
 		if err != nil {
-			err := thumbnail(file, out_path, fp.Ext(".jpg"))
+			err := thumbnail(file, out_path, fp.Ext(".jpg"), width, height)
 			if err != nil {
-				return err
+				return count, err
 			}
 		}
+		count++
 	}
+
 	for index, dir := range TODODIR.AbsDirs {
-		thumb_directory(dir, fp.Join(outdir, TODODIR.Dirs[index]))
+		c, _ := thumb_directory(dir, fp.Join(outdir, TODODIR.Dirs[index]), width, height)
+		count += c
 	}
-	return nil
+
+	return count, nil
 }

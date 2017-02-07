@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"net/url"
+	"strings"
 )
 
 func h_a(url, text string) string {
@@ -29,10 +30,17 @@ func h_p(text, class string) string {
 	return h_ele("p", class, text)
 }
 
-func UrlEncoded(str string) string {
+func url_path_encode(str string) string {
 	u, err := url.Parse(str)
 	if err != nil {
 		return ""
 	}
 	return u.String()
+}
+func UrlEncoded(str string) string {
+	names := []string{}
+	for _, name := range strings.Split(str, "/") {
+		names = append(names, url_path_encode(name))
+	}
+	return strings.Join(names, "/")
 }

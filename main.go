@@ -108,12 +108,13 @@ func (album MyAlbum) Serve(ctx *iris.Context) {
 			<title>My Photos</title>
 			<style>
 				.right{float: right;}
-				.region{
+				.card{
 					background-color: #fff;
 					box-shadow: 0 2px 5px 0 rgba(0, 0, 0, .16), 0 2px 10px 0 rgba(0, 0, 0, .12);
 					margin: 0 auto 1rem auto;
 					padding: 1rem;
 					max-width: 900px;
+					border-radius: 3px;
 				}
 				.directory:hover
 				{
@@ -132,6 +133,9 @@ func (album MyAlbum) Serve(ctx *iris.Context) {
 					border-radius: 4px;
 					color: black;
 					text-decoration: none;
+				}
+				div.pagination a:hover{
+					box-shadow: 0 2px 5px 0 rgba(0, 0, 0, .16), 0 2px 10px 0 rgba(0, 0, 0, .12);
 				}
 
 				div.photos div.container{
@@ -154,17 +158,18 @@ func (album MyAlbum) Serve(ctx *iris.Context) {
 				a.photo img.thumbnail:hover{
 					opacity: 0.7;
 					border: 1px solid chocolate;
+					box-shadow: 0 2px 5px 0 rgba(0, 0, 0, .16), 0 2px 10px 0 rgba(0, 0, 0, .12);
 				}
 			</style>
 		</head>
 		<body>
-			<div class="region directories">
+			<div class="card directories">
 				<h3> Directories: %v <a href="/index" class="right">Home</a> </h3>
 				<div>%v</div>
 			</div>
-			<div class="region photos">
+			<div class="card photos">
 				<h3>Photos: %v Size: %v</h3>
-				<div class="pagination region">%v</div>
+				<div class="pagiContainer">%v</div>
 				<div class="container"> %v </div>
 			</div>
 		</body>
@@ -179,7 +184,11 @@ func (album MyAlbum) Serve(ctx *iris.Context) {
 }
 
 func Img2Html(pathName string, dir *Dir, page int) (string, []string) {
-	htmlImages := []string{}
+	var (
+		pagination string
+		htmlImages []string
+	)
+
 	_images, previous, next, page := Page(dir.Images, page, size)
 	_abs_images, previous, next, page := Page(dir.AbsImages, page, size)
 
@@ -187,14 +196,16 @@ func Img2Html(pathName string, dir *Dir, page int) (string, []string) {
 	var htmlPrevious, htmlNext string
 	if previous {
 		newUrl, _ := AddQuery(pathName, "page", strconv.Itoa(page-1))
-		htmlPrevious = fmt.Sprintf(`<a class="previous" href="%v">Previous</a>`, newUrl)
+		htmlPrevious = fmt.Sprintf(`<a class="previous" href="%v">←Previous</a>`, newUrl)
 	}
 	if next {
 		newUrl, _ := AddQuery(pathName, "page", strconv.Itoa(page+1))
-		htmlNext = fmt.Sprintf(`<a class="next" href="%v">Next</a>`, newUrl)
+		htmlNext = fmt.Sprintf(`<a class="next" href="%v">Next→</a>`, newUrl)
 	}
-	//pagination := fmt.Sprintf(`<div class="pagination">%v%v</div>`, htmlPrevious, htmlNext)
-	pagination := htmlPrevious + htmlNext
+	if len(_images) > 0 {
+		pagination = fmt.Sprintf(`<div class="pagination card">%v%v</div>`, htmlPrevious, htmlNext)
+		//pagination = htmlPrevious + htmlNext
+	}
 
 	for index, file := range _images {
 		u, _ := url.Parse(pathName[7:])
@@ -237,7 +248,7 @@ func Page(items []string, page, size int) ([]string, bool, bool, int) {
 		return Page(items, 1, size)
 	}
 	if !next {
-		end = len(items) - 1
+		end = len(items)
 	}
 	return items[start:end], page > 1, next, page
 }

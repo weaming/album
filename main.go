@@ -225,6 +225,10 @@ func Dir2Html(pathName string, dir *Dir) []string {
 }
 
 func Page(items []string, page, size int) ([]string, bool, bool, int) {
+	if len(items) == 0 {
+		return []string{}, false, false, 1
+	}
+
 	end := size * page
 	start := end - size
 	next := end < len(items)

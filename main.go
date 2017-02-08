@@ -7,6 +7,7 @@ import (
 	"os"
 	"path"
 	fp "path/filepath"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -16,14 +17,16 @@ import "github.com/iris-contrib/middleware/basicauth"
 
 const DEFAULT_PW = "admin"
 
+var size int
+
 func main() {
 	var LISTEN = flag.String("l", ":8000", "Listen [host]:port, default bind to 0.0.0.0")
 	var ADMIN = flag.String("u", "admin", "Basic authentication username")
 	var PASSWORD = flag.String("p", DEFAULT_PW, "Basic authentication password")
 	var OUTDIR = flag.String("o", "", "The directory of thumnail. Default [$ROOT/../thumbnail]")
-	var outdir = ""
 	var MAX_WIDTH = flag.Uint("w", 200, "The maximum width of output photo.")
 	var MAX_HEIGHT = flag.Uint("h", 200, "The maximum height of output photo.")
+	flag.IntVar(&size, "n", 20, "The maximum number of photos in each page.")
 	flag.Parse()
 
 	// check the directory path
@@ -38,6 +41,7 @@ func main() {
 		os.Exit(1)
 	}
 
+	var outdir = ""
 	if *OUTDIR != "" {
 		outdir = *OUTDIR
 	} else {
@@ -70,6 +74,7 @@ func main() {
 	{
 		needAuth.Handle("GET", "/*path", MyAlbum{root: ROOT})
 	}
+	fmt.Printf("Open http://127.0.0.1:%v to enjoy!\n", strings.Split(*LISTEN, ":")[1])
 	iris.Listen(*LISTEN)
 }
 
@@ -79,14 +84,22 @@ type MyAlbum struct {
 }
 
 func (album MyAlbum) Serve(ctx *iris.Context) {
-	path := ctx.Path()
+	pathName := ctx.Path()
 	obj := NewDir(fp.Join(album.root, ctx.Param("path")))
+	page, err := ctx.URLParamInt("page")
+	if err != nil {
+		target, _ := AddQuery(pathName, "page", "1")
+		ctx.Redirect(target)
+		return
+	}
+
 	if obj == nil {
 		ctx.WriteString("Invalid URL")
 		return
 	} else {
 		album.dir = obj
 	}
+	pagination, htmlImages := Img2Html(pathName, album.dir, page)
 	ctx.WriteString(fmt.Sprintf(`
 		<!DOCTYPE html>
 		<html lang="en">
@@ -105,6 +118,20 @@ func (album MyAlbum) Serve(ctx *iris.Context) {
 				.directory:hover
 				{
 					background-color: #eee;
+				}
+
+				div.pagination {
+					padding: 0 20px;
+				}
+
+				div.pagination a{
+					display: inline-block;
+					border: 1px solid #aaa;
+					padding: 5px 10px;
+					margin: 5px 10px;
+					border-radius: 4px;
+					color: black;
+					text-decoration: none;
 				}
 
 				div.photos div.container{
@@ -133,42 +160,78 @@ func (album MyAlbum) Serve(ctx *iris.Context) {
 		<body>
 			<div class="region directories">
 				<h3> Directories: %v <a href="/index" class="right">Home</a> </h3>
-				%v
+				<div>%v</div>
 			</div>
 			<div class="region photos">
 				<h3>Photos: %v Size: %v</h3>
+				<div class="pagination">%v</div>
 				<div class="container"> %v </div>
 			</div>
 		</body>
 		</html>`,
 		len(album.dir.Dirs),
-		strings.Join(Dir2Html(path, album.dir), "\n"),
+		strings.Join(Dir2Html(pathName, album.dir), "\n"),
 		len(album.dir.Images),
 		some_files_size_str(album.dir.AbsImages),
-		strings.Join(Img2Html(path, album.dir), "\n")))
+		pagination,
+		strings.Join(htmlImages, "\n")))
 }
 
-func Img2Html(uri string, dir *Dir) []string {
-	rv := []string{}
-	for index, file := range dir.Images {
-		u, _ := url.Parse(uri[7:])
+func Img2Html(pathName string, dir *Dir, page int) (string, []string) {
+	htmlImages := []string{}
+	_images, previous, next, page := Page(dir.Images, page, size)
+	_abs_images, previous, next, page := Page(dir.AbsImages, page, size)
+
+	// add pagination
+	var htmlPrevious, htmlNext string
+	if previous {
+		newUrl, _ := AddQuery(pathName, "page", strconv.Itoa(page-1))
+		htmlPrevious = fmt.Sprintf(`<a class="previous" href="%v">Previous</a>`, newUrl)
+	}
+	if next {
+		newUrl, _ := AddQuery(pathName, "page", strconv.Itoa(page+1))
+		htmlNext = fmt.Sprintf(`<a class="next right" href="%v">Next</a>`, newUrl)
+	}
+	pagination := fmt.Sprintf(`<div class="pagination">%v%v</div>`, htmlPrevious, htmlNext)
+
+	for index, file := range _images {
+		u, _ := url.Parse(pathName[7:])
 		u.Path = path.Join("/thumb/", u.Path, file)
 
-		rv = append(rv, fmt.Sprintf(`<a class="photo" href="%v"><img src="%v" class="thumbnail" title="%v"></a>`,
-			"/img/"+fp.Join(uri[7:], file),
+		htmlImages = append(htmlImages, fmt.Sprintf(`<a class="photo" href="%v"><img src="%v" class="thumbnail" title="%v"></a>`,
+			"/img/"+path.Join(pathName[7:], file),
 			UrlEncoded(u.String()),
-			fmt.Sprintf("%v [%v]", file, file_size_str(dir.AbsImages[index]))))
+			fmt.Sprintf("%v [%v]", file, file_size_str(_abs_images[index]))))
 	}
-	return rv
+	return pagination, htmlImages
 }
 
-func Dir2Html(path string, dir *Dir) []string {
+func Dir2Html(pathName string, dir *Dir) []string {
 	rv := []string{}
 	for index, file := range dir.Dirs {
 		if hasPhoto(dir.AbsDirs[index]) {
-			rv = append(rv, h_div(
-				h_span(h_a("/index/"+fp.Join(path[7:], file), file+"/"), "link")+h_span(dir_images_size_str(dir.AbsDirs[index]), "right"), "directory"))
+			sub_dir := NewDir(dir.AbsDirs[index])
+			rv = append(rv, fmt.Sprintf(
+				`<div class="directory"><a class="link" href="%v">%v</a><span class="count right">[%v]</span><span class="right">%v</span></div>`,
+				"/index/"+fp.Join(pathName[7:], file)+"/",
+				file+"/",
+				len(sub_dir.Images),
+				dir_images_size_str(dir.AbsDirs[index])))
 		}
 	}
 	return rv
+}
+
+func Page(items []string, page, size int) ([]string, bool, bool, int) {
+	end := size * page
+	start := end - size
+	next := end < len(items)
+
+	if len(items) < start {
+		return Page(items, 1, size)
+	}
+	if !next {
+		end = len(items) - 1
+	}
+	return items[start:end], page > 1, next, page
 }

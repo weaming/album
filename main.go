@@ -102,7 +102,8 @@ func (album MyAlbum) Serve(ctx *iris.Context) {
 
 	pagination, htmlImages, returnPage := Img2Html(pathName, album.dir, page)
 	if returnPage != page {
-		target, _ := AddQuery(pathName, "page", "1")
+		fmt.Println(returnPage)
+		target, _ := AddQuery(pathName, "page", strconv.Itoa(returnPage))
 		ctx.Redirect(target)
 	}
 
@@ -250,8 +251,12 @@ func Page(items []string, page, size int) ([]string, bool, bool, int) {
 	start := end - size
 	next := end < len(items)
 
-	if len(items) < start {
-		return Page(items, 1, size)
+	if len(items) <= start {
+		_page := len(items) / size
+		if _page*size < len(items) {
+			_page++
+		}
+		return Page(items, _page, size)
 	}
 	if !next {
 		end = len(items)

@@ -121,7 +121,7 @@ func (album MyAlbum) Serve(ctx *iris.Context) {
 				}
 
 				div.pagination {
-					padding: 0 20px;
+					min-height: 20px;
 				}
 
 				div.pagination a{
@@ -164,7 +164,7 @@ func (album MyAlbum) Serve(ctx *iris.Context) {
 			</div>
 			<div class="region photos">
 				<h3>Photos: %v Size: %v</h3>
-				<div class="pagination">%v</div>
+				<div class="pagination region">%v</div>
 				<div class="container"> %v </div>
 			</div>
 		</body>
@@ -174,7 +174,8 @@ func (album MyAlbum) Serve(ctx *iris.Context) {
 		len(album.dir.Images),
 		some_files_size_str(album.dir.AbsImages),
 		pagination,
-		strings.Join(htmlImages, "\n")))
+		strings.Join(htmlImages, "\n"),
+	))
 }
 
 func Img2Html(pathName string, dir *Dir, page int) (string, []string) {
@@ -190,9 +191,10 @@ func Img2Html(pathName string, dir *Dir, page int) (string, []string) {
 	}
 	if next {
 		newUrl, _ := AddQuery(pathName, "page", strconv.Itoa(page+1))
-		htmlNext = fmt.Sprintf(`<a class="next right" href="%v">Next</a>`, newUrl)
+		htmlNext = fmt.Sprintf(`<a class="next" href="%v">Next</a>`, newUrl)
 	}
-	pagination := fmt.Sprintf(`<div class="pagination">%v%v</div>`, htmlPrevious, htmlNext)
+	//pagination := fmt.Sprintf(`<div class="pagination">%v%v</div>`, htmlPrevious, htmlNext)
+	pagination := htmlPrevious + htmlNext
 
 	for index, file := range _images {
 		u, _ := url.Parse(pathName[7:])

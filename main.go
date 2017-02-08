@@ -202,7 +202,7 @@ func Img2Html(pathName string, dir *Dir, page int) (string, []string) {
 		newUrl, _ := AddQuery(pathName, "page", strconv.Itoa(page+1))
 		htmlNext = fmt.Sprintf(`<a class="next" href="%v">Next→</a>`, newUrl)
 	}
-	if len(_images) > 0 {
+	if previous || next {
 		pagination = fmt.Sprintf(`<div class="pagination card">%v%v</div>`, htmlPrevious, htmlNext)
 		//pagination = htmlPrevious + htmlNext
 	}

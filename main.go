@@ -85,7 +85,6 @@ type MyAlbum struct {
 
 func (album MyAlbum) Serve(ctx *iris.Context) {
 	pathName := ctx.Path()
-	obj := NewDir(fp.Join(album.root, ctx.Param("path")))
 	page, err := ctx.URLParamInt("page")
 	if err != nil {
 		target, _ := AddQuery(pathName, "page", "1")
@@ -93,13 +92,20 @@ func (album MyAlbum) Serve(ctx *iris.Context) {
 		return
 	}
 
+	obj := NewDir(fp.Join(album.root, ctx.Param("path")))
 	if obj == nil {
 		ctx.WriteString("Invalid URL")
 		return
 	} else {
 		album.dir = obj
 	}
-	pagination, htmlImages := Img2Html(pathName, album.dir, page)
+
+	pagination, htmlImages, returnPage := Img2Html(pathName, album.dir, page)
+	if returnPage != page {
+		target, _ := AddQuery(pathName, "page", "1")
+		ctx.Redirect(target)
+	}
+
 	ctx.WriteString(fmt.Sprintf(`
 		<!DOCTYPE html>
 		<html lang="en">
@@ -183,7 +189,7 @@ func (album MyAlbum) Serve(ctx *iris.Context) {
 	))
 }
 
-func Img2Html(pathName string, dir *Dir, page int) (string, []string) {
+func Img2Html(pathName string, dir *Dir, page int) (string, []string, int) {
 	var (
 		pagination string
 		htmlImages []string
@@ -216,7 +222,7 @@ func Img2Html(pathName string, dir *Dir, page int) (string, []string) {
 			UrlEncoded(u.String()),
 			fmt.Sprintf("%v [%v]", file, file_size_str(_abs_images[index]))))
 	}
-	return pagination, htmlImages
+	return pagination, htmlImages, page
 }
 
 func Dir2Html(pathName string, dir *Dir) []string {

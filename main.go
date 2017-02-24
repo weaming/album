@@ -26,6 +26,7 @@ func main() {
 	var OUTDIR = flag.String("o", "", "The directory of thumnail. Default [$ROOT/../thumbnail]")
 	var MAX_WIDTH = flag.Uint("w", 200, "The maximum width of output photo.")
 	var MAX_HEIGHT = flag.Uint("h", 200, "The maximum height of output photo.")
+	var NEED_AUTH = flag.Bool("a", true, "Whether need authorization.")
 	flag.IntVar(&size, "n", 20, "The maximum number of photos in each page.")
 	flag.Parse()
 
@@ -47,25 +48,14 @@ func main() {
 	} else {
 		outdir = fp.Join(fp.Dir(ROOT), "thumbnail")
 	}
-	fmt.Printf("To be listed direcotry: [%v]\n", ROOT)
+	green(fmt.Sprintf("To be listed direcotry: [%v]", ROOT))
+	green(fmt.Sprintf("Cache direcotry: [%v]", outdir))
 	go func() {
 		for {
 			thumb_directory(ROOT, outdir, *MAX_WIDTH, *MAX_HEIGHT)
 			time.Sleep(time.Minute * 20)
 		}
 	}()
-
-	fmt.Printf("Your basic authentication username: [%v]\n", *ADMIN)
-	fmt.Printf("Your basic authentication password: [%v]\n", *PASSWORD)
-	if *PASSWORD == DEFAULT_PW {
-		fmt.Println("Warning: set yourself password")
-	}
-
-	authConfig := basicauth.Config{
-		Users:   map[string]string{*ADMIN: *PASSWORD},
-		Expires: time.Duration(5) * time.Minute,
-	}
-	auth := basicauth.New(authConfig)
 
 	iris.Config.Gzip = true // compressed gzip contents to the client, the same for Serializers also, defaults to false
 
@@ -75,9 +65,26 @@ func main() {
 	iris.StaticWeb("/img", ROOT)
 	iris.StaticWeb("/thumb", outdir)
 
-	needAuth := iris.Party("/index", auth)
-	{
-		needAuth.Handle("GET", "/*path", MyAlbum{root: ROOT})
+	if *NEED_AUTH {
+		green(fmt.Sprintf("Your basic authentication username: [%v]", *ADMIN))
+		green(fmt.Sprintf("Your basic authentication password: [%v]", *PASSWORD))
+		if *PASSWORD == DEFAULT_PW {
+			warn("Warning: set yourself password by option -p")
+		}
+
+		authConfig := basicauth.Config{
+			Users:   map[string]string{*ADMIN: *PASSWORD},
+			Expires: time.Duration(5) * time.Minute,
+		}
+
+		auth := basicauth.New(authConfig)
+		needAuth := iris.Party("/index", auth)
+		{
+			needAuth.Handle("GET", "/*path", MyAlbum{root: ROOT})
+		}
+	} else {
+		warn("Warning: directories will be public to visitors!")
+		iris.Handle("GET", "/index/*path", MyAlbum{root: ROOT})
 	}
 	fmt.Printf("Open http://127.0.0.1:%v to enjoy!\n", strings.Split(*LISTEN, ":")[1])
 	iris.Listen(*LISTEN)

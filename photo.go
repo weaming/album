@@ -86,7 +86,7 @@ func thumb_directory(tododir, outdir string, width, height uint) (int, error) {
 
 		out_path := fp.Join(outdir, rel_path)
 		if _, err := os.Stat(out_path); err == nil {
-			fmt.Printf("Ignore existed: %v\n", out_path)
+			brown(fmt.Sprintf("Ignore existed: %v", out_path))
 			continue
 		}
 

@@ -51,21 +51,15 @@ func NewDir(path string) *Dir {
 }
 
 func size2text(size int64) string {
-	size_float := float64(size)
 	const ratio = 1024
+	size_float := float64(size)
+	units := []string{"B", "KB", "MB", "GB", "TB", "EB"}
 
-	switch {
-	case size < ratio:
-		return fmt.Sprintf("%.2f %v", size_float, "B")
-	case size/ratio < ratio:
-		return fmt.Sprintf("%.2f %v", size_float/ratio, "KB")
-	case size/ratio/ratio < ratio:
-		return fmt.Sprintf("%.2f %v", size_float/ratio/ratio, "MB")
-	case size/ratio/ratio/ratio < ratio:
-		return fmt.Sprintf("%.2f %v", size_float/ratio/ratio/ratio, "GB")
-	default:
-		return ""
+	index := 0
+	for ; size_float > ratio; index += 1 {
+		size_float /= ratio
 	}
+	return fmt.Sprintf("%.2f %s", size_float, units[index])
 }
 
 func get_size(path string) int64 {

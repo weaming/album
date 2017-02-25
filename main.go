@@ -24,10 +24,14 @@ func main() {
 	var ADMIN = flag.String("u", "admin", "Basic authentication username")
 	var PASSWORD = flag.String("p", DEFAULT_PW, "Basic authentication password")
 	var OUTDIR = flag.String("o", "", "The directory of thumnail. Default [$ROOT/../thumbnail]")
-	var MAX_WIDTH = flag.Uint("w", 200, "The maximum width of output photo.")
-	var MAX_HEIGHT = flag.Uint("h", 200, "The maximum height of output photo.")
+	var MAX_WIDTH = flag.Uint("wd", 200, "The maximum width of output photo.")
+	var MAX_HEIGHT = flag.Uint("ht", 200, "The maximum height of output photo.")
 	var NEED_AUTH = flag.Bool("a", true, "Whether need authorization.")
 	flag.IntVar(&size, "n", 20, "The maximum number of photos in each page.")
+	flag.Usage = func() {
+		fmt.Fprintf(os.Stderr, "Usage: %s [options] ROOT\nThe ROOT is the directory contains photos.\n\n", os.Args[0])
+		flag.PrintDefaults()
+	}
 	flag.Parse()
 
 	// check the directory path

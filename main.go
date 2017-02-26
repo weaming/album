@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"net/http"
 	"net/url"
 	"os"
 	"path"
@@ -11,22 +12,26 @@ import (
 	"strings"
 	"time"
 
-	"net/http"
+	"github.com/NYTimes/gziphandler"
 )
 
 const DEFAULT_PW = "admin"
 
 var size int
+var NEED_AUTH bool
+var ADMIN, PASSWORD string
 
 func main() {
 	var LISTEN = flag.String("l", ":8000", "Listen [host]:port, default bind to 0.0.0.0")
 	var OUTDIR = flag.String("o", "", "The directory of thumnail. Default [$ROOT/../thumbnail]")
 	var MAX_WIDTH = flag.Uint("wd", 200, "The maximum width of output photo.")
 	var MAX_HEIGHT = flag.Uint("ht", 200, "The maximum height of output photo.")
-	//var NEED_AUTH = flag.Bool("a", true, "Whether need authorization.")
-	//var ADMIN = flag.String("u", "admin", "Basic authentication username")
-	//var PASSWORD = flag.String("p", DEFAULT_PW, "Basic authentication password")
+
+	flag.BoolVar(&NEED_AUTH, "a", true, "Whether need authorization.")
+	flag.StringVar(&ADMIN, "u", "admin", "Basic authentication username")
+	flag.StringVar(&PASSWORD, "p", DEFAULT_PW, "Basic authentication password")
 	flag.IntVar(&size, "n", 20, "The maximum number of photos in each page.")
+
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage: %s [options] ROOT\nThe ROOT is the directory contains photos.\n\n", os.Args[0])
 		flag.PrintDefaults()
@@ -45,6 +50,7 @@ func main() {
 		os.Exit(1)
 	}
 
+	// thumbnail cache directory
 	var outdir = ""
 	if *OUTDIR != "" {
 		outdir = *OUTDIR
@@ -53,6 +59,17 @@ func main() {
 	}
 	green(fmt.Sprintf("To be listed direcotry: [%v]", ROOT))
 	green(fmt.Sprintf("Cache direcotry: [%v]", outdir))
+
+	// basic authentication
+	if NEED_AUTH {
+		if PASSWORD == DEFAULT_PW {
+			red("Warning: set yourself password by option -p")
+		}
+		green(fmt.Sprintf("Your basic auth name and password: [%v:%v]", ADMIN, PASSWORD))
+	} else {
+		red("Warning: please set your HTTP basic authentication")
+	}
+
 	go func() {
 		for {
 			thumb_directory(ROOT, outdir, *MAX_WIDTH, *MAX_HEIGHT)
@@ -61,7 +78,7 @@ func main() {
 	}()
 
 	Redirect("/", "/index")
-	http.Handle("/index/", MyAlbum{root: ROOT})
+	http.Handle("/index/", gziphandler.GzipHandler(MyAlbum{root: ROOT}))
 	ServeDir("/img/", ROOT)
 	ServeDir("/thumb/", outdir)
 
@@ -76,6 +93,15 @@ type MyAlbum struct {
 
 func (album MyAlbum) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	logit(r)
+	if NEED_AUTH {
+		mybasicAuth(album.handlerFunc, ADMIN, PASSWORD)(w, r)
+	} else {
+		album.handlerFunc(w, r)
+	}
+}
+
+func (album MyAlbum) handlerFunc(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Server", "Happy coding!")
 	pathName := r.URL.Path
 
 	page, err := getQueryInt(r, "page")

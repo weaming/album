@@ -4,7 +4,7 @@ import "fmt"
 
 var NC = "\033[0m"
 
-func warn(text string) {
+func red(text string) {
 	RED := "\033[0;31m"
 	fmt.Printf("%v%v%v\n", RED, text, NC)
 }

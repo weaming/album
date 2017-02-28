@@ -21,17 +21,7 @@ func thumbnail(path, outpath, ext string, width, height uint) error {
 	}
 
 	// decode jpeg into image.Image
-	var img image.Image
-	switch ext {
-	case ".jpg":
-		img, err = jpeg.Decode(file)
-	case ".png":
-		img, err = png.Decode(file)
-	case ".gif":
-		img, err = gif.Decode(file)
-	default:
-		img, err = jpeg.Decode(file)
-	}
+	img, _, err := image.Decode(file)
 	if err != nil {
 		return err
 	}

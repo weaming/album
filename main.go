@@ -78,12 +78,17 @@ func main() {
 	}()
 
 	Redirect("/", "/index")
+	ServeFile("/favicon.ico", fp.Join(ROOT, "./favicon.ico"))
+
 	http.Handle("/index/", gziphandler.GzipHandler(MyAlbum{root: ROOT}))
 	ServeDir("/img/", ROOT)
 	ServeDir("/thumb/", outdir)
 
 	fmt.Printf("Open http://127.0.0.1:%v to enjoy!\n", strings.Split(*LISTEN, ":")[1])
-	http.ListenAndServe(*LISTEN, nil)
+	err = http.ListenAndServe(*LISTEN, nil)
+	if err != nil {
+		fmt.Println(err)
+	}
 }
 
 type MyAlbum struct {

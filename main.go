@@ -126,7 +126,6 @@ func (album MyAlbum) handlerFunc(w http.ResponseWriter, r *http.Request) {
 
 	pagination, htmlImages, returnPage := Img2Html(pathName, album.dir, page)
 	if returnPage != page {
-		fmt.Println(returnPage)
 		target, _ := AddQuery(pathName, "page", strconv.Itoa(returnPage))
 		http.Redirect(w, r, target, http.StatusFound)
 	}
@@ -154,6 +153,11 @@ func (album MyAlbum) handlerFunc(w http.ResponseWriter, r *http.Request) {
 
 		div.pagination {
 		min-height: 20px;
+		}
+
+		#pagination {
+		display: grid;
+		grid-template-columns: 1fr 150px;
 		}
 
 		div.pagination a{
@@ -199,8 +203,9 @@ func (album MyAlbum) handlerFunc(w http.ResponseWriter, r *http.Request) {
 		<div>%v</div>
 		</div>
 		<div class="card photos">
-		<h3>Photos: %v Size: %v</h3>
+		<h3 id="pagination">Photos: %v Size: %v
 		<div class="pagiContainer">%v</div>
+		</h3>
 		<div class="container"> %v </div>
 		</div>
 		</body>
@@ -227,14 +232,14 @@ func Img2Html(pathName string, dir *Dir, page int) (string, []string, int) {
 	var htmlPrevious, htmlNext string
 	if previous {
 		newUrl, _ := AddQuery(pathName, "page", strconv.Itoa(page-1))
-		htmlPrevious = fmt.Sprintf(`<a class="previous" href="%v">←Previous</a>`, newUrl)
+		htmlPrevious = fmt.Sprintf(`<a class="previous" href="%v">←</a>`, newUrl)
 	}
 	if next {
 		newUrl, _ := AddQuery(pathName, "page", strconv.Itoa(page+1))
-		htmlNext = fmt.Sprintf(`<a class="next" href="%v">Next→</a>`, newUrl)
+		htmlNext = fmt.Sprintf(`<a class="next" href="%v">→</a>`, newUrl)
 	}
 	if previous || next {
-		pagination = fmt.Sprintf(`<div class="pagination card">%v%v</div>`, htmlPrevious, htmlNext)
+		pagination = fmt.Sprintf(`<div class="pagination">%v%v</div>`, htmlPrevious, htmlNext)
 		//pagination = htmlPrevious + htmlNext
 	}
 
